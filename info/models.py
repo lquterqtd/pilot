@@ -38,6 +38,16 @@ class SelfFeeContractInfo(models.Model):
             return self.contract_amount
     get_contract_amount.short_description = '合同金额(万)'
     #----------------------------------------------------------------------
+    def is_over_plan_hours(self):
+        """"""
+        if self.available_hours and self.actual_hours:
+            if self.actual_hours > self.available_hours:
+                return u'<font color="#dd0000">超时</font>'
+        else:
+            return u''
+    is_over_plan_hours.allow_tags = True
+    is_over_plan_hours.short_description = '是否超时'
+    #----------------------------------------------------------------------
     def get_arrears_info(self):
         """"""
         p = ReceivablesInfo.objects.filter(contract=self.pk)
@@ -50,11 +60,12 @@ class SelfFeeContractInfo(models.Model):
         if sum_arrears == 0:
             return u''
         else:
-            return u'<font color="#dd0000">%d</font>' % sum_arrears
+            return u'<font color="#dd0000">%.1f</font>' % sum_arrears
     get_arrears_info.allow_tags = True
     get_arrears_info.short_description = '欠款(元)'
     def __unicode__(self):
         return self.contract_id
+
 ########################################################################
 class CompanyInfo(models.Model):
     """"""
@@ -99,9 +110,9 @@ class CompanySponsoredContractInfo(models.Model):
         if sum_arrears == 0:
             return u''
         else:
-            return u'<font color="#dd0000">%d</font>' % sum_arrears
+            return u'<font color="#dd0000">%.3f</font>' % sum_arrears
     get_arrears_info.allow_tags = True
-    get_arrears_info.short_description = '欠款(元)'
+    get_arrears_info.short_description = '欠款(万)'
     #----------------------------------------------------------------------
     def get_students_count(self):
         """"""
@@ -172,6 +183,11 @@ SCHOOL_TIME_YEAR = (
     ('2012', '2012年'),
     ('2013', '2013年'),
     ('2014', '2014年'),
+    ('2015', '2015年'),
+    ('2016', '2016年'),
+    ('2017', '2017年'),
+    ('2018', '2018年'),
+    ('2019', '2019年'),
 )
 SCHOOL_TIME_MONTH = (
     ('1', '1月'),
@@ -356,40 +372,19 @@ class ContractExecutedInfo(models.Model):
     flight_date.allow_tags = True
     flight_date.short_description = '飞行'
     #----------------------------------------------------------------------
-    def is_in(self, a, b, c, aa, bb, cc, y, m, d):
-        """"""
-        if y >= a and y <= aa and m >= b and m <= bb and d >=c and d <= cc:
-            return True
-        else:
-            return False
-    #----------------------------------------------------------------------
     def is_overdue(self):
         """"""
-        y = datetime.datetime.now().year
-        m = datetime.datetime.now().month
-        d = datetime.datetime.now().day
         res = u''
+        today = datetime.date.today()
         if self.theory_plan_time_start != None:
-            if not self.is_in(
-                self.theory_plan_time_start.year,
-                self.theory_plan_time_start.month,
-                self.theory_plan_time_start.day,
-                self.theory_plan_time_end.year,
-                self.theory_plan_time_end.month,
-                self.theory_plan_time_end.day,
-                y, m, d
-            ):
+            if today < self.theory_plan_time_start:
+                res += u'<font color="#dd0000">理论未开始</font><br>'
+            elif today > self.theory_plan_time_end:
                 res += u'<font color="#dd0000">理论时间超期</font><br>'
         if self.flight_plan_time_start != None:
-            if not self.is_in(
-                self.flight_plan_time_start.year,
-                self.flight_plan_time_start.month,
-                self.flight_plan_time_start.day,
-                self.flight_plan_time_end.year,
-                self.flight_plan_time_end.month,
-                self.flight_plan_time_end.day,
-                y, m, d
-            ):
+            if today < self.flight_plan_time_start:
+                res += u'<font color="#dd0000">飞行未开始</font><br>'
+            elif today > self.flight_plan_time_end:
                 res += u'<font color="#dd0000">飞行时间超期</font><br>'
         return res
     is_overdue.allow_tags = True
