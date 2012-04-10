@@ -284,6 +284,7 @@ class SelfFeeStudent(models.Model):
     class Meta:
         verbose_name = '学员基本信息'
         verbose_name_plural = '学员基本信息'
+        ordering = ['student_number']
     def __unicode__(self):
         return self.name
     #----------------------------------------------------------------------
