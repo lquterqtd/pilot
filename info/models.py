@@ -92,6 +92,24 @@ class SelfFeeContractInfo(models.Model):
             return u'<font color="#dd0000">%.1f</font>' % sum_arrears
     get_arrears_info.allow_tags = True
     get_arrears_info.short_description = '欠款金额(元)'
+    #----------------------------------------------------------------------
+    def have_received_amount(self):
+        """"""
+        p = ReceivablesInfo.objects.filter(contract=self.pk)
+        if p.count() == 0:
+            return u''
+        sum = 0.0
+        for item in p:
+            if item.actual_amount == None:
+                continue
+            else:
+                sum += item.actual_amount
+        if sum >= self.contract_amount*10000:
+            return u'<font color="#00FF00">%.1f</font>' % sum
+        else:
+            return sum
+    have_received_amount.allow_tags = True
+    have_received_amount.short_description = '已收金额(元)'
     def __unicode__(self):
         return self.contract_id
 

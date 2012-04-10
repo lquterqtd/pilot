@@ -125,6 +125,7 @@ class SelfFeeContractInfoAdmin(admin.ModelAdmin):
         'available_hours',
         'get_actual_hours',
         'is_over_plan_hours',
+        'have_received_amount',
         'get_arrears_info',
     )
 
