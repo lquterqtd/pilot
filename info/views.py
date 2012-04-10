@@ -32,6 +32,7 @@ def get_plan_list(StartDate, EndDate):
                     'date': item.plan_date,
                     }
             )
+    report_plan_list.sort(key = lambda x:x['date'])
     return plan_sum, report_plan_list
 #----------------------------------------------------------------------
 def get_actual_list(StartDate, EndDate):
@@ -60,6 +61,7 @@ def get_actual_list(StartDate, EndDate):
                     'date': item.actual_date,
                     }
             )
+    report_actual_list.sort(key = lambda x:x['date'])
     return actual_sum, report_actual_list
 def report(request):
     """"""
@@ -119,6 +121,7 @@ def company_get_plan_list(StartDate, EndDate):
                     'date': item.plan_date,
                     }
             )
+    report_plan_list.sort(key = lambda x:x['date'])
     return plan_sum, report_plan_list
 #----------------------------------------------------------------------
 def company_get_actual_list(StartDate, EndDate):
@@ -146,6 +149,7 @@ def company_get_actual_list(StartDate, EndDate):
                     'date': item.actual_date,
                     }
             )
+    report_actual_list.sort(key = lambda x:x['date'])
     return actual_sum, report_actual_list
 #----------------------------------------------------------------------
 def company_report(request):
