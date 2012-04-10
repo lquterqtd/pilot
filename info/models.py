@@ -211,6 +211,23 @@ class CompanySponsoredContractInfo(models.Model):
             return u'<a href="/admin/info/contractexecutedinfo/%d/">查看</a>' % p.pk
     get_executed_info.allow_tags = True
     get_executed_info.short_description = '合同执行信息'
+    def have_received_amount(self):
+        """"""
+        p = SponsoredReceivablesInfo.objects.filter(contract=self.pk)
+        if p.count() == 0:
+            return u''
+        sum = 0.0
+        for item in p:
+            if item.actual_amount == None:
+                continue
+            else:
+                sum += item.actual_amount
+        if sum >= self.contract_amount*10000:
+            return u'<font color="#00FF00">%.1f</font>' % sum
+        else:
+            return sum
+    have_received_amount.allow_tags = True
+    have_received_amount.short_description = '已收金额(元)'
 EDUCATION_CHOICE = (
     ('GZ', '高中'),
     ('DZ', '大专'),

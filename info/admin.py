@@ -140,6 +140,7 @@ class CompanySponsoredContractInfoAdmin(admin.ModelAdmin):
         'get_executed_info',
         'get_students_count',
         'get_contract_amount',
+        'have_received_amount',
         'get_arrears_info',
         )
 
