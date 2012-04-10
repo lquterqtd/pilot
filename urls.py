@@ -4,6 +4,7 @@ from django.conf.urls.defaults import patterns, include, url
 from django.contrib import admin, databrowse
 import info
 
+
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -16,5 +17,7 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     #url(r'^admin/info/companysponsoredcontractinfo/', 'info.views.index'),
+    url(r'^admin/report', 'info.views.report'),
+    url(r'^admin/company_report', 'info.views.company_report'),
     url(r'^admin/', include(admin.site.urls)),
 )

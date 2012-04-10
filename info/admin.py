@@ -5,6 +5,8 @@ __author__ = 'lquterqtd'
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from pilot.info.models import SelfFeeStudent, ReceivablesInfo
+import datetime
+
 admin.site.unregister(User)
 admin.site.unregister(Group)
 ########################################################################
@@ -18,6 +20,32 @@ class SponsoredReceivablesInfoInline(admin.TabularInline):
     model = SponsoredReceivablesInfo
     extra = 0
 ########################################################################
+from django.contrib.admin.views.main import ChangeList
+class MyChangList(ChangeList):
+    """"""
+    def get_results(self, request):
+        user = request.user
+        qs = self.query_set
+        if user.username == 'editor':
+            #self.list_display.remove('remarks')
+            #self.list_editable = ('actual_hours',)
+            self.list_display = (
+                'student_number',
+                'name',
+                'actual_hours',
+                'get_update_time',
+            )
+        elif user.username == 'confirm':
+            self.list_display = (
+                'student_number',
+                'name',
+                'actual_hours',
+                'get_update_time',
+                'is_confirmed',
+            )
+        self.query_set = qs
+        return super(MyChangList, self).get_results(request)
+########################################################################
 class SelfFeeStudentAdmin(admin.ModelAdmin):
     """"""
     list_display = (
@@ -28,12 +56,13 @@ class SelfFeeStudentAdmin(admin.ModelAdmin):
         'get_school_time',
         'student_type',
         'grade',
-        'remarks',
+        #'remarks',
         'contract_id_link',
         'student_status',
         'training_phase',
-        'actual_hours',
-        'commercial_license',
+        'get_actual_hours',
+        'get_update_time',
+        'get_confirmed_info',
         )
     fieldsets = [
         ('学员基本信息', {'fields': [
@@ -56,6 +85,8 @@ class SelfFeeStudentAdmin(admin.ModelAdmin):
             'training_phase',
             'actual_hours',
             'commercial_license',
+            'is_confirmed',
+            #'actual_hours_update_time',
         ]}),
     ]
     search_fields = (
@@ -69,7 +100,20 @@ class SelfFeeStudentAdmin(admin.ModelAdmin):
         'student_status',
         'training_phase',
         'commercial_license',
+        'is_confirmed'
     )
+    list_per_page = 50
+    #----------------------------------------------------------------------
+    def get_changelist(self, request, **kwargs):
+        """"""
+        return MyChangList
+    #----------------------------------------------------------------------
+    def save_model(self, request, obj, form, change):
+        """"""
+        if request.user.username == 'editor':
+            obj.is_confirmed = False
+            obj.actual_hours_update_time = datetime.datetime.now()
+        obj.save()
 admin.site.register(SelfFeeStudent, SelfFeeStudentAdmin)
 ########################################################################
 class SelfFeeContractInfoAdmin(admin.ModelAdmin):
@@ -79,7 +123,7 @@ class SelfFeeContractInfoAdmin(admin.ModelAdmin):
         'contract_id',
         'get_contract_amount',
         'available_hours',
-        'actual_hours',
+        'get_actual_hours',
         'is_over_plan_hours',
         'get_arrears_info',
     )

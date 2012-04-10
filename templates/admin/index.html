@@ -17,14 +17,16 @@
         <div class="module">
         <table summary="{% blocktrans with app.name as name %}Models available in the {{ name }} application.{% endblocktrans %}">
         <caption><a href="{{ app.app_url }}" class="section">{% trans app.name %}</a></caption>
-        <caption><a href="{{ app.app_url }}" class="section">{% trans app.name %}</a></caption>
-        <caption><a href="{{ app.app_url }}" class="section">{% trans app.name %}</a></caption>
         {% for model in app.models %}
             <tr>
             {% if model.perms.change %}
                 <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
             {% else %}
-                <th scope="row">{{ model.name }}</th>
+                {% if model.perms.view %}
+                    <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+                {% else %}
+                    <th scope="row">{{ model.name }}</th>
+                {% endif %}
             {% endif %}
 
             {% if model.perms.add %}
@@ -40,6 +42,14 @@
             {% endif %}
             </tr>
         {% endfor %}
+        {% if flag %}
+            <tr>
+                <th scope="row"><a href="report">自费合同报表查询</a></th>
+            </tr>
+            <tr>
+                <th scope="row"><a href="company_report">公司委培合同报表查询</a></th>
+            </tr>
+        {% endif %}
         </table>
         </div>
     {% endfor %}

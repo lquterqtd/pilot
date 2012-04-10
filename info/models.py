@@ -15,7 +15,7 @@ class SelfFeeContractInfo(models.Model):
     contract_amount = models.FloatField('合同金额(万)', blank=True, null=True)
     contract_status = models.CharField('合同状态', max_length=2, choices=CONTRACT_STATUS)
     available_hours = models.CharField('可飞小时数', max_length=20, blank=True)
-    actual_hours = models.CharField('实飞小时数', max_length=20, blank=True)
+    #actual_hours = models.CharField('实飞小时数', max_length=20, blank=True)
     class Meta:
         verbose_name = '自费合同信息'
         verbose_name_plural = '自费合同信息'
@@ -38,13 +38,42 @@ class SelfFeeContractInfo(models.Model):
             return self.contract_amount
     get_contract_amount.short_description = '合同金额(万)'
     #----------------------------------------------------------------------
+    def get_actual_hours(self):
+        """"""
+        try:
+            p = SelfFeeStudent.objects.get(contract_id=self.contract_id)
+        except SelfFeeStudent.DoesNotExist:
+            return u'没有找到该合同对应的学员'
+        else:
+            return p.actual_hours
+    get_actual_hours.short_description = '实飞小时数'
+    #----------------------------------------------------------------------
     def is_over_plan_hours(self):
         """"""
-        if self.available_hours and self.actual_hours:
-            if self.actual_hours > self.available_hours:
-                return u'<font color="#dd0000">超时</font>'
+        try:
+            p = SelfFeeStudent.objects.get(contract_id=self.contract_id)
+        except SelfFeeStudent.DoesNotExist:
+            return u'没有找到该合同对应的学员'
         else:
-            return u''
+            actual_hours = p.actual_hours
+            if actual_hours != '':
+                actual_hours = actual_hours.split(':')
+            else:
+                actual_hours = ['0', '0', '0']
+            if self.available_hours and actual_hours:
+                if actual_hours[0] > self.available_hours:
+                    return u'<font color="#dd0000">超时</font>'
+                elif actual_hours[0] == self.available_hours:
+                    if int(actual_hours[1]) > 0:
+                        return u'<font color="#dd0000">超时</font>'
+                    elif int(actual_hours[1]) == 0:
+                        if int(actual_hours[2]) > 0:
+                            return u'<font color="#dd0000">超时</font>'
+            #    else:
+            #        return u''
+            #else:
+            #    return u''
+        return u''
     is_over_plan_hours.allow_tags = True
     is_over_plan_hours.short_description = '是否超时'
     #----------------------------------------------------------------------
@@ -56,13 +85,13 @@ class SelfFeeContractInfo(models.Model):
         sum_arrears = 0
         for receivablesinfo in p:
             if receivablesinfo.actual_amount != None and receivablesinfo.plan_amount != None and receivablesinfo.actual_amount < receivablesinfo.plan_amount:
-                sum_arrears += receivablesinfo.plan_amount - receivablesinfo.actual_amount
+                sum_arrears += receivablesinfo.actual_amount - receivablesinfo.plan_amount
         if sum_arrears == 0:
             return u''
         else:
             return u'<font color="#dd0000">%.1f</font>' % sum_arrears
     get_arrears_info.allow_tags = True
-    get_arrears_info.short_description = '欠款(元)'
+    get_arrears_info.short_description = '欠款金额(元)'
     def __unicode__(self):
         return self.contract_id
 
@@ -100,19 +129,34 @@ class CompanySponsoredContractInfo(models.Model):
     #----------------------------------------------------------------------
     def get_arrears_info(self):
         """"""
+        #获得该合同的所有收款信息
         p = SponsoredReceivablesInfo.objects.filter(contract=self.pk)
+        #不存在收款信息则直接返回
         if p.count() == 0:
             return u''
-        sum_arrears = 0
+
+        sum_arrears = 0.0
         for receivablesinfo in p:
-            if receivablesinfo.actual_amount != None and receivablesinfo.plan_amount != None and receivablesinfo.actual_amount < receivablesinfo.plan_amount:
-                sum_arrears += receivablesinfo.plan_amount - receivablesinfo.actual_amount
-        if sum_arrears == 0:
+            #只有时间节点、应收款、实收款都填写的才计算欠款额
+            if receivablesinfo.actual_amount != None and receivablesinfo.plan_amount != None:
+                sum_arrears += receivablesinfo.actual_amount - receivablesinfo.plan_amount
+            #if receivablesinfo.time_node != None and receivablesinfo.actual_amount != None and receivablesinfo.plan_amount != None:
+            #    #处理多笔收款的情况
+            #    gt_p = SponsoredReceivablesInfo.objects.filter(pk__gt=receivablesinfo.pk)
+            #    for item in gt_p:
+            #        #这不是多笔收款
+            #        if item.time_node != '':
+            #            break
+            #        else:
+            #            actual_amount += item.actual_amount
+            #    sum_arrears = receivablesinfo.actual_amount + actual_amount - receivablesinfo.plan_amount
+
+        if sum_arrears < 0.0001 and sum_arrears > -0.0001:
             return u''
         else:
-            return u'<font color="#dd0000">%.3f</font>' % sum_arrears
+            return u'<font color="#dd0000">%+.1f</font>' % sum_arrears
     get_arrears_info.allow_tags = True
-    get_arrears_info.short_description = '欠款(万)'
+    get_arrears_info.short_description = '欠款金额(元)'
     #----------------------------------------------------------------------
     def get_students_count(self):
         """"""
@@ -229,6 +273,9 @@ class SelfFeeStudent(models.Model):
     student_status = models.CharField('学员状态', max_length=4, choices=STUDENT_STATUS)
     training_phase = models.CharField('培训阶段', max_length=4, choices=TRAINING_PHASE, help_text="如果学员已毕业离校请选择'其它'")
     actual_hours = models.CharField('实飞小时数', max_length=20, blank=True, default='::', help_text='填写格式为"小时:分钟:秒",如"123:45:6"')
+    actual_hours_update_time = models.DateTimeField('实飞小时数更新时间', blank=True)
+    is_confirmed = models.BooleanField('实飞小时数确认', default=False, help_text='勾选即表示确认实飞小时数')
+    actual_hours_old = models.CharField('实飞小时数对比', max_length=20, blank=True, default='', help_text='填写格式为"小时:分钟:秒",如"123:45:6"')
     commercial_license = models.BooleanField(
         '商照结束',
         default=False,
@@ -260,7 +307,7 @@ class SelfFeeStudent(models.Model):
                     return u'<a href="/admin/info/selffeecontractinfo/%d/">%s</a>' % (create_contract.pk, self.contract_id)
                 else:
                     return u'<a href="/admin/info/selffeecontractinfo/%d/">%s</a>' % (p.pk, self.contract_id)
-            elif self.student_type == 'JTNWP':
+            elif self.student_type == 'JTNWP' or (self.company_id != 1 and self.company_id != 99):
                 try:
                     p = CompanySponsoredContractInfo.objects.get(contract_id=self.contract_id)
                 except CompanySponsoredContractInfo.DoesNotExist:
@@ -273,12 +320,64 @@ class SelfFeeStudent(models.Model):
                 else:
                     return u'<a href="/admin/info/companysponsoredcontractinfo/%d/">%s</a>' % (p.pk, self.contract_id)
             else:
-                return self.contract_id
+                if self.company_id == 1:
+                    try:
+                        p = SelfFeeContractInfo.objects.get(contract_id=self.contract_id)
+                    except SelfFeeContractInfo.DoesNotExist:
+                        create_contract = SelfFeeContractInfo(
+                            contract_id=self.contract_id,
+                            contract_status='ZC'
+                        )
+                        create_contract.save()
+                        return u'<a href="/admin/info/selffeecontractinfo/%d/">%s</a>' % (create_contract.pk, self.contract_id)
+                    else:
+                        return u'<a href="/admin/info/selffeecontractinfo/%d/">%s</a>' % (p.pk, self.contract_id)
+                elif self.company_id != 99:
+                    try:
+                        p = CompanySponsoredContractInfo.objects.get(contract_id=self.contract_id)
+                    except CompanySponsoredContractInfo.DoesNotExist:
+                        create_contract = CompanySponsoredContractInfo(
+                            contract_id=self.contract_id,
+                            company_id=self.company_id
+                        )
+                        create_contract.save()
+                        return u'<a href="/admin/info/companysponsoredcontractinfo/%d/">%s</a>' % (create_contract.pk, self.contract_id)
+                    else:
+                        return u'<a href="/admin/info/companysponsoredcontractinfo/%d/">%s</a>' % (p.pk, self.contract_id)
+                else:
+                    return self.contract_id
         else:
             return u'未填写'
     contract_id_link.allow_tags = True
     contract_id_link.short_description = '合同号'
-
+    #----------------------------------------------------------------------
+    def get_update_time(self):
+        """"""
+        import time
+        if self.actual_hours_update_time:
+            return self.actual_hours_update_time.strftime('%Y-%m-%d %H:%M:%S')
+        return u''
+    get_update_time.short_description = '更新时间'
+    #----------------------------------------------------------------------
+    def get_actual_hours(self):
+        """"""
+        if self.training_phase == 'FX':
+            return self.actual_hours
+        else:
+            return u''
+    get_actual_hours.short_description = '实飞小时数'
+    #----------------------------------------------------------------------
+    def get_confirmed_info(self):
+        """"""
+        if self.training_phase == 'FX':
+            if self.is_confirmed:
+                return u'<font color="#00FF00">是</font><br>'
+            else:
+                return u'<font color="#FF0000">否</font><br>'
+        else:
+            return u''
+    get_confirmed_info.short_description = '实飞小时数确认'
+    get_confirmed_info.allow_tags = True
 ########################################################################
 class ReceivablesInfo(models.Model):
     """"""
@@ -298,9 +397,9 @@ class SponsoredReceivablesInfo(models.Model):
     """"""
     contract = models.ForeignKey(CompanySponsoredContractInfo)
     time_node = models.CharField('时间节点', max_length=30, blank=True)
-    plan_amount = models.FloatField('应收金额(万)', blank=True, null=True)
+    plan_amount = models.FloatField('应收金额(元)', blank=True, null=True)
     plan_date = models.DateField('应收款日期', blank=True, null=True)
-    actual_amount = models.FloatField('实收金额(万)', blank=True, null=True)
+    actual_amount = models.FloatField('实收金额(元)', blank=True, null=True)
     actual_date = models.DateField('实收款日期', blank=True, null=True)
     class Meta:
         verbose_name = '委培合同收款信息'
@@ -375,16 +474,15 @@ class ContractExecutedInfo(models.Model):
     def is_overdue(self):
         """"""
         res = u''
-        today = datetime.date.today()
-        if self.theory_plan_time_start != None:
-            if today < self.theory_plan_time_start:
-                res += u'<font color="#dd0000">理论未开始</font><br>'
-            elif today > self.theory_plan_time_end:
+        if self.theory_plan_time_start != None and self.theory_plan_time_end != None and self.theory_actual_time_start != None and self.theory_actual_time_end != None:
+            if self.theory_actual_time_end <= self.theory_plan_time_end and self.theory_actual_time_start >= self.theory_plan_time_start and self.theory_actual_time_start <= self.theory_actual_time_end:
+                pass
+            else:
                 res += u'<font color="#dd0000">理论时间超期</font><br>'
-        if self.flight_plan_time_start != None:
-            if today < self.flight_plan_time_start:
-                res += u'<font color="#dd0000">飞行未开始</font><br>'
-            elif today > self.flight_plan_time_end:
+        if self.flight_plan_time_start != None and self.flight_plan_time_end != None and self.flight_actual_time_start != None and self.flight_actual_time_end != None:
+            if self.flight_actual_time_end <= self.flight_plan_time_end and self.flight_actual_time_start >= self.flight_plan_time_start and self.flight_actual_time_start <= self.flight_actual_time_end:
+                pass
+            else:
                 res += u'<font color="#dd0000">飞行时间超期</font><br>'
         return res
     is_overdue.allow_tags = True

@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>自费合同报表查询</title>
+        <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
+        <link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" />
+        <script type="text/javascript">window.__admin_media_prefix__ = "/static/admin/";</script>
+        <script type="text/javascript" src="/admin/jsi18n/"></script>
+        <script type="text/javascript" src="/static/admin/js/core.js"></script>
+        {{ form.media }}
+        <style type="text/css">
+            #report_title{
+                margin: 10px;
+                color: #003366;
+            }
+            #date_select{
+                float: left;
+                margin-left: 10px;
+                margin-right: 20px;
+            }
+            #result{
+                margin: 10px;
+            }
+            th{
+                text-align: center;
+            }
+            #report_table_head{
+                margin-bottom: 5px;
+            }
+            #report_plan_table{
+                float: left;
+                margin-right: 10px;
+            }
+            #header{
+                width: 100%;
+                height: 40px;
+                color: #27ba61;
+            }
+            #site-name{
+                padding: 0 10px;
+                font-size: 18px;
+                margin: 8px 0;
+                font-weight: normal;
+                color: #F4F379;
+            }
+        </style>
+    </head>
+    <body>
+    <div id="header">
+        <h1 id="site-name">系统管理</h1>
+    </div>
+    <div id="report_form">
+        <form action="" method="POST">
+            {% csrf_token %}
+            <div id="report_title">
+                <p style="color: #5B80B2" ><b>自费合同报表查询</b></p>
+            </div>
+            <div id="date_select">
+                {{ form.StartDate.label }}&nbsp;{{ form.StartDate }}&nbsp;&nbsp;&nbsp;{{ form.EndDate.label }}&nbsp;{{ form.EndDate }}
+            </div>
+            <div id="submit_button"><!-- DIV needed for valid HTML -->
+                <input type="submit" value="查询" />&nbsp;&nbsp;&nbsp;<a href="/admin">返回首页</a>
+            </div>
+        </form>
+    </div>
+    {% if flag %}
+        <div id="result">
+            <table id="report_table_head" border="0" bgcolor="#F0FFFF">
+                <tr>
+                    <th colspan="5" style="text-align: left">{{ StartDate|date:"Y年m月d日" }}至{{ EndDate|date:"Y年m月d日" }}:</th>
+                </tr>
+                <tr>
+                    <td colspan="5">应收款: {{ plan_sum }} 元，实收款: {{ actual_sum }} 元</td>
+                </tr>
+            </table>
+                <span>
+                    {% if report_plan_list %}
+                        <div id="report_plan_table">
+                            <table border="0" bgcolor="#F0FFFF">
+                                <tr>
+                                    <th colspan="5">应收款详情</th>
+                                </tr>
+                                <tr>
+                                    <th width="80">学号</th>
+                                    <th width="80">姓名</th>
+                                    <th width="80">合同号</th>
+                                    <th width="80">应收款</th>
+                                    <th width="80">日期</th>
+                                </tr>
+                                {% for item in report_plan_list %}
+                                    <tr>
+                                        <td align="center">{{ item.id }}</td>
+                                        <td align="center">{{ item.name }}</td>
+                                        <td align="center">{{ item.contract_id }}</td>
+                                        <td align="center">{{ item.plan }}</td>
+                                        <td align="center">{{ item.date|date:"Y.m.d" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                    {% if report_actual_list %}
+                        <div>
+                            <table id="report_actual_table" border="0" bgcolor="#F0FFFF">
+                                <tr>
+                                    <th colspan="5">实收款详情</th>
+                                </tr>
+                                <tr>
+                                    <th width="80">学号</th>
+                                    <th width="80">姓名</th>
+                                    <th width="80">合同号</th>
+                                    <th width="80">实收款</th>
+                                    <th width="80">日期</th>
+                                </tr>
+                                {% for item in report_actual_list %}
+                                    <tr>
+                                        <td align="center">{{ item.id }}</td>
+                                        <td align="center">{{ item.name }}</td>
+                                        <td align="center">{{ item.contract_id }}</td>
+                                        <td align="center">{{ item.plan }}</td>
+                                        <td align="center">{{ item.date|date:"Y.m.d" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                </span>
+        </div>
+    {% endif %}
+    </body>
+</html>

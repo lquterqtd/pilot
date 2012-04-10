@@ -1,4 +1,5 @@
 # Django settings for pilot project.
+import os.path
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -98,11 +99,14 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.csrf.CsrfResponseMiddleware',
 )
 
 ROOT_URLCONF = 'pilot.urls'
 
-TEMPLATE_DIRS = ('D:/pilot/templates',)
+TEMPLATE_DIRS = (
+    os.path.join(os.path.dirname(__file__), 'templates').replace('\\','/'),
+)
 
 INSTALLED_APPS = (
     'django.contrib.auth',

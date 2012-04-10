@@ -1,0 +1,21 @@
+#report_title{
+    margin: 10px;
+}
+#date_select{
+    float: left;
+    margin-left: 10px;
+    margin-right: 20px;
+}
+#result{
+    margin: 10px;
+}
+th{
+    text-align: center;
+}
+#report_table_head{
+    margin-bottom: 5px;
+}
+#report_plan_table{
+    float: left;
+    margin-right: 10px;
+}
